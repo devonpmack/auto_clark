@@ -1,0 +1,6 @@
+[submodule "pyaccessories"]
+	path = pyaccessories
+	url = https://github.com/devonpmack/pyaccessories.git
+[submodule "RedmineAPI"]
+	path = RedmineAPI
+	url = https://github.com/devonpmack/RedmineAPI.git
