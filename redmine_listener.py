@@ -90,31 +90,7 @@ class Run(object):
         self.redmine.update_issue(redmine_id, notes, status_change=4, assign_to_id=get['issue']['author']['id'])
 
     def run_request(self, inputs):
-        # Parse input
-        # noinspection PyBroadException
-        try:
-            runner = MassExtractor(inputs=inputs)
-            missing_files = runner.run()
-
-            # Respond on redmine
-            self.completed_response(os.path.split(inputs['outputfolder'])[-1], missing_files)
-
-        except Exception as e:
-            import traceback
-            self.t.time_print("[Warning] run.py had a problem, continuing redmine api anyways.")
-            self.t.time_print("[AutoSNVPhyl Error Dump]\n" + traceback.format_exc())
-            # Send response
-            msg = traceback.format_exc()
-
-            # Set it to feedback and assign it back to the author
-            get = self.redmine.get_issue_data(os.path.split(inputs['outputfolder'])[-1])
-            self.redmine.update_issue(
-                                      os.path.split(inputs['outputfolder'])[-1],
-                                      notes="There was a problem with your request. Please create a new issue on"
-                                            " Redmine to re-run it.\n%s" % msg,
-                                      status_change=4,
-                                      assign_to_id=get['issue']['author']['id']
-                                      )
+        pass
 
     def main_loop(self):
         import time
@@ -131,7 +107,7 @@ class Run(object):
         found = []
 
         for issue in data['issues']:
-            if issue['id'] not in self.responded_issues and issue['status']['name'] == 'New':
+            if issue['status']['name'] == 'New':
                 if issue['subject'].lower() == 'clark':
                     found.append(issue)
 
@@ -144,10 +120,6 @@ class Run(object):
         # Run extraction
         if self.redmine.get_issue_data(issue['id'])['issue']['status']['name'] == 'New':
             self.t.time_print("Found clark to run. Subject: %s. ID: %s" % (issue['subject'], issue['id']))
-            self.t.time_print("Adding to responded to")
-            self.responded_issues.add(issue['id'])
-            self.issue_loader.responded_issues = list(self.responded_issues)
-            self.issue_loader.dump()
 
             # Turn the description into a list of lines
             input_list = issue['description'].split('\n')
@@ -216,10 +188,6 @@ class Run(object):
         self.t = Timer(log_file=os.path.join(self.script_dir, 'runner_logs',
                                              datetime.datetime.now().strftime("%d-%m-%Y_%S:%M:%H")))
         self.t.set_colour(30)
-
-        # Load issues that the bot has already responded to
-        self.issue_loader = SaveLoad(os.path.join(self.script_dir, 'responded_issues.json'), create=True)
-        self.responded_issues = set(self.issue_loader.get('responded_issues', default=[], ask=False))
 
         # Get encrypted api key from config
         # Load the config
